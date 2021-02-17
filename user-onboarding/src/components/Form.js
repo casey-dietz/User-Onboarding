@@ -1,4 +1,7 @@
-import React, {useState} from 'react';
+import axios from 'axios';
+import React, {useState, useEffect} from 'react';
+import FormSchema from '../validation/FormSchema'
+
 
 const Form = () => {
 
@@ -9,13 +12,51 @@ const Form = () => {
         terms: false
     })
 
+    const [users, setUsers] = useState([])
+
+    const getData = () => {
+        axios.get('https://reqres.in/api/users')
+            .then(res => {
+                setUsers(res.data)
+            })
+            .catch(err => console.log(err))
+    }
+    
+    const postData = newUser => {
+        axios
+            .post('https://reqres.in/api/users', newUser)
+            .then(res => {
+                console.log(res.data)
+                setUsers([...users, res.data])
+
+            })
+    }
+
+    const [buttonDisabled, setButtonDisabled] = useState(true)
+
+    useEffect(() => {
+        FormSchema.isValid(formState)
+            .then((valid) => {
+                setButtonDisabled(!valid)
+            }, [formState])
+    })
+
     const formSubmit = e => {
         e.preventDefault()
-        console.log('submitted')
+        axios
+            .post('https://reqres.in/api/users', formState)
+            .then((res) => console.log(res))
+            .catch((err) => console.log(err))
+    }
+
+    const inputChange = e => {
+        let value = e.target.type === "checkbox" ? e.target.checked : e.target.value
+        setFormState({...formState, [e.target.name]: value})
     }
 
     return (
         <form onSubmit={formSubmit}>
+            <h1>Onboarding Form</h1>
             <label htmlFor="name">
                 Name:
                 <input 
@@ -23,6 +64,7 @@ const Form = () => {
                     name="name"
                     id="name"
                     value={formState.name}
+                    onChange={inputChange}
                     />
             </label>
             <label htmlFor="email">
@@ -32,6 +74,7 @@ const Form = () => {
                     name="email"
                     id="email"
                     value={formState.email}
+                    onChange={inputChange}
                 />
             </label>
             <label htmlFor="password">
@@ -41,6 +84,7 @@ const Form = () => {
                     name="password"
                     id="password"
                     value={formState.password}
+                    onChange={inputChange}
                 />
             </label>
             <label htmlFor="terms">
@@ -50,9 +94,10 @@ const Form = () => {
                     name="terms"
                     id="terms"
                     checked={formState.terms}
+                    onChange={inputChange}
                 />
             </label>
-            <button>Submit</button>
+            <button disabled={buttonDisabled}>Submit</button>
         </form>
     )
 }
